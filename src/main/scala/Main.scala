@@ -11,6 +11,7 @@ object Main {
     val baseDir = "src/main/resources/"
     val clients = ResourceManager.parseClients(baseDir + "clients.txt")
     val orders = ResourceManager.parseOrders(baseDir + "orders.txt", clients)
+    if(clients.isEmpty || orders.isEmpty)return
     var exchangeEngine: ExchangeEngine = null
     println(args)
     val conf = new Conf(args)

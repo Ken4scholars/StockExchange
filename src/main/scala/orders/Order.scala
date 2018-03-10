@@ -8,7 +8,7 @@ import clients.Client
   */
 
 object Order {
-  var counter = 0
+  var counter = -1
   def increment = {
     counter += 1
     counter

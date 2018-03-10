@@ -20,10 +20,6 @@ abstract class ExchangeEngine {
   var orderBooks = new mutable.HashMap[Stock.Value, OrderBook]
 
 
-  def addClient(client: Client): Unit = {
-    clients += client
-  }
-
   def handleOrder(order: Order): Unit = {
     orderBooks.get(order.stock) match {
       case Some(orderBook) =>

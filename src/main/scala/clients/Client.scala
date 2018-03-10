@@ -15,14 +15,14 @@ class Client(val name: String, var usdBalance: Long, var stocks: mutable.HashMap
   def buy(buyOrder: BuyOrder, price: Long): Unit ={
     assert(buyOrder.client == this)
     usdBalance -= price * buyOrder.volume
-    stocks.update(buyOrder.stock, stocks.getOrElse(buyOrder.stock, 0L) + buyOrder.volume)
+    stocks.update(buyOrder.stock, stocks(buyOrder.stock) + buyOrder.volume)
 
   }
 
   def sell(sellOrder: SellOrder, price: Long): Unit ={
     assert(sellOrder.client == this)
     usdBalance += price * sellOrder.volume
-    stocks.update(sellOrder.stock, stocks.getOrElse(sellOrder.stock, 0L) - sellOrder.volume)
+    stocks.update(sellOrder.stock, stocks(sellOrder.stock) - sellOrder.volume)
   }
 
 

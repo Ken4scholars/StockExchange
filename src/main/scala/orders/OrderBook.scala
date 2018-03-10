@@ -114,7 +114,7 @@ class OrderBook(val stock: Stock.Value, val exactMatch: Boolean, val checkBalanc
     buyOrder.client.usdBalance >= buyOrder.price * buyOrder.volume
 
   private def checkSellOrder(sellOrder: SellOrder): Boolean =
-   sellOrder.client.stocks.getOrElse(sellOrder.stock, 0L) >= sellOrder.volume
+   sellOrder.client.stocks(sellOrder.stock) >= sellOrder.volume
 
   def trade(buyOrder: BuyOrder, sellOrder: SellOrder, price: Long): Unit = {
     buyOrder.client.buy(buyOrder, price)
