@@ -21,6 +21,7 @@ class ClientTest extends FunSuite with BeforeAndAfterEach {
 
   override def afterEach() {
     client = null
+    otherClient = null
   }
 
   test("testBuy: functions properly") {
