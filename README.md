@@ -57,3 +57,43 @@ C2  s   A   8   10
  * Основной результат - файл конечного состояния счетов клиентов биржи после обработки предоставленных данных
  * Исходный код проекта на Github
  * Набор unit-тестов
+ 
+# Решение 
+Задача была решена с исползованием языка Scala в среде JVM, в виде 
+небольшого CLI.
+
+## Комментарии
+
+  * Реализованы и часточное сопоставление и матчинг по польному совпадениею. можно переключить с помочью параметра `--exact-match` при запуске программы.
+  * Также есть возможность преоверить/не проверить отрицателные балансы клиентов при обработке.
+  * Заявки на покупки и продажи от одного клиента добавляются стакан но не могут матчитьсяю При этои они могу матчится с другими заявками.
+
+Файл `result.txt` с резултатом хранится в директории `src/main/resources/`. 
+Разумеется, в зависимости от условии, резултаты могут получиться разными. 
+
+## Запуск Программы
+
+Чтобы запустить программу, достаточно использовать `sbt run [OPTIONS]` в корневой директории. 
+Конечно же, нужно сначала установить `sbt` в систему если он не присутствует.
+
+Исползуя `sbt run --help` можно посмотреть на подробную описание аргументов
+
+```
+StockExchangeEngine 1.0.0 (c) 2018 Kenneth Nwafor
+Usage: sbt run [OPTIONS]...
+E.g: sbt run --exact-match --checkBalance
+StockExchangeEngine is simple matching engine for orders in a stock market.
+Options:
+
+  -c, --check-balance   If enabled, price and volume balances are checked for
+                        validity before an order is processed.
+  -e, --exact-match     If enabled, matching is done only when both stock price
+                        and volume match.
+  -h, --help            Show help message
+  -v, --version         Show version of this program
+
+If you have any questions, please consult Kenneth
+
+
+
+```

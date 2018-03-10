@@ -2,64 +2,110 @@ package orders
 
 import stocks.Stock
 
+import scala.collection.mutable.ListBuffer
+
 /**
   * Created by kenneth on 08.03.18.
   */
-class OrderBook(val stock: Stock.Value) {
-  var buyOrders: List[BuyOrder] = List[BuyOrder]()
-  var sellOrders: List[SellOrder] = List[SellOrder]()
+class OrderBook(val stock: Stock.Value, val exactMatch: Boolean, val checkBalance: Boolean) {
+  var buyOrders: ListBuffer[BuyOrder] = ListBuffer[BuyOrder]()
+  var sellOrders: ListBuffer[SellOrder] = ListBuffer[SellOrder]()
 
-  def addOrder(order: Order) {
+  def addOrder(order: Order): Boolean = {
     assert(stock == order.stock)
     order match {
       case buy: BuyOrder ⇒
-
-//        if (!checkBuyOrder(buy)){
-//          println("The Order costs more than client's USD balance")
-//        }
-//        else
-          buyOrders = (buy :: buyOrders).sortBy(o => (-o.price, o.serialNumber))
+        if (checkBalance && !checkBuyOrder(buy)) {
+          println("The Order " + order.serialNumber +
+            " cannot be added to order book because it costs more than the buyer's USD balance")
+          return false
+        }
+        if (exactMatch) {
+          buyOrders = buyOrders.sortBy(_.serialNumber)
+          buyOrders.prepend(buy)
+          sellOrders = sellOrders.sortBy(_.serialNumber)
+        }
+        else {
+          buyOrders.prepend(buy)
+          buyOrders.sortBy(o => (-o.price, o.serialNumber))
+        }
       case sell: SellOrder ⇒
-//        if (checkSellOrder(sell)){
-//          println("Order caThe client has less stock than he wants to sell")
-//        }
-//        else
-          sellOrders = (sell :: sellOrders).sortBy(o => (o.price, o.serialNumber))
+        if (checkBalance && !checkSellOrder(sell)){
+          println("Order " + order.serialNumber +
+            " cannot be added to order book because the seller has less stock than he wants to sell")
+          return false
+        }
+        if(exactMatch) {
+          sellOrders = sellOrders.sortBy(_.serialNumber)
+          sellOrders.prepend(sell)
+          buyOrders = buyOrders.sortBy(_.serialNumber)
+        }
+        else {
+          sellOrders.prepend(sell)
+          sellOrders.sortBy(o => (o.price, o.serialNumber))
+        }
     }
+    true
   }
 
 
-  def matchOrders(newOrder: Order) {
-    if (buyOrders.nonEmpty && sellOrders.nonEmpty) {
-      if (buyOrders.head.client.equals(sellOrders.head.client)){
+  def matchOrders(newOrder: Order, callCount: Int) {
+    if (buyOrders.nonEmpty &&
+      sellOrders.nonEmpty &&
+      callCount <= (if(buyOrders.length > sellOrders.length) buyOrders.length else sellOrders.length)) {
+      if (buyOrders.head.client.equals(sellOrders.head.client )){
         if (newOrder.isInstanceOf[BuyOrder]){
-          sellOrders = sellOrders.tail
+          sellOrders.append(sellOrders.head)
+          sellOrders.remove(0)
+        }else {
+          buyOrders.append(buyOrders.head)
+          buyOrders.remove(0)
         }
+        if(sellOrders.isEmpty | buyOrders.isEmpty)return
       }
       val topOfBook = (buyOrders.head, sellOrders.head)
       topOfBook match {
-        case (buyOrder, sellOrder) if buyOrder.price < sellOrder.price ||  buyOrder.client == sellOrder.client ⇒ // no match
-        case (buyOrder, sellOrder) if buyOrder.price >= sellOrder.price  && buyOrder.volume == sellOrder.volume ⇒
+        case (buyOrder, sellOrder) if exactMatch ⇒ {
+          if(buyOrder.price == sellOrder.price && buyOrder.volume == sellOrder.volume){
+            trade(buyOrder, sellOrder, if(buyOrder == newOrder) sellOrder.price else buyOrder.price)
+            buyOrders = buyOrders.tail
+            sellOrders = sellOrders.tail
 
+          }
+          else {
+            if(newOrder.isInstanceOf[BuyOrder]){
+              sellOrders.append(sellOrders.head)
+              sellOrders.remove(0)
+            }else {
+              buyOrders.append(buyOrders.head)
+              buyOrders.remove(0)
+            }
+            matchOrders(newOrder, callCount + 1)
+          }
+        }
+        case (buyOrder, sellOrder) if buyOrder.price < sellOrder.price ⇒ // no match
+
+        case (buyOrder, sellOrder) if !exactMatch && buyOrder.price >= sellOrder.price  && buyOrder.volume == sellOrder.volume ⇒
           trade(buyOrder, sellOrder, if(buyOrder == newOrder) sellOrder.price else buyOrder.price)
           buyOrders = buyOrders.tail
           sellOrders = sellOrders.tail
-//          matchOrders(newOrder)
-        case (buyOrder, sellOrder) if buyOrder.price >= sellOrder.price  && buyOrder.volume < sellOrder.volume ⇒
+
+        case (buyOrder, sellOrder) if !exactMatch && buyOrder.price >= sellOrder.price  && buyOrder.volume < sellOrder.volume ⇒
           val matchingSells = sellOrder.split(buyOrder.volume)
           val remainingSells = sellOrder.split(sellOrder.volume - buyOrder.volume)
           trade(buyOrder, matchingSells, if(buyOrder == newOrder) sellOrder.price else buyOrder.price)
           buyOrders = buyOrders.tail
-          sellOrders = remainingSells :: sellOrders.tail
+          sellOrders.update(0, remainingSells)
+          matchOrders(newOrder, callCount + 1)
 
-          matchOrders(newOrder)
-        case (buyOrder, sellOrder) if buyOrder.price >= sellOrder.price && buyOrder.volume > sellOrder.volume ⇒
+        case (buyOrder, sellOrder) if !exactMatch && buyOrder.price >= sellOrder.price && buyOrder.volume > sellOrder.volume ⇒
           val matchingBuys = buyOrder.split(sellOrder.volume)
           val remainingBuys = buyOrder.split(buyOrder.volume - sellOrder.volume)
           trade(matchingBuys, sellOrder, if(buyOrder == newOrder) sellOrder.price else buyOrder.price)
-          buyOrders = remainingBuys :: buyOrders.tail
+          buyOrders.update(0, remainingBuys)
           sellOrders = sellOrders.tail
-          matchOrders(newOrder)
+          matchOrders(newOrder, callCount + 1)
+        case _ =>
       }
     }
   }

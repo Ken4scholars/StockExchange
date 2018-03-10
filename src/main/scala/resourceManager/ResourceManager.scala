@@ -18,18 +18,17 @@ object ResourceManager {
   def parseOrders(filepath: String, clients: ArrayBuffer[Client]): ArrayBuffer[Order] = {
     val orders = new ArrayBuffer[Order]
     parseFromFile(filepath).foreach(line => {
-      var client = clients.find(_.name == line(0)) match {
+      val client = clients.find(_.name == line(0)) match {
         case Some(client: Client) => client
         case None => throw ResourceParseException("Client " + line(0) + " not found")
       }
-      var orderClass = if (line(1).equals("b")) BuyOrder
+      val orderClass = if (line(1).equals("b")) BuyOrder
       else if (!line(1).equals("s")) throw ResourceParseException("Operation " + line(1) + " is not supported")
       else SellOrder
-      var stock = Stock.values.find(_.toString == line(2)) match {
+      val stock = Stock.values.find(_.toString == line(2)) match {
         case Some(stock: Stock.Value) => stock
         case None => throw ResourceParseException("Stock " + line(2) + " not found")
       }
-//      TODO: refactor string comparison
       orders.append(orderClass(client, stock, line(3).toLong, line(4).toLong))
     })
     orders
@@ -63,6 +62,12 @@ object ResourceManager {
   }
 
   private def parseFromFile(filepath: String): List[Array[String]] =
-    Source.fromFile(filepath).getLines.toList.map(res => res.split("\t"))
+    Source.fromFile(filepath)
+      .getLines
+      .filter(!_.isEmpty)
+      .toList
+      .map(res => res
+        .split("\\s+")
+        .map(_.trim))
 
 }
