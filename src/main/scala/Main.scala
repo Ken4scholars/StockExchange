@@ -31,15 +31,15 @@ object Main {
 
 class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
   version("StockExchangeEngine 1.0.0 (c) 2018 Kenneth Nwafor")
-  banner("""Usage: sbt run [OPTIONS]...
+  banner("""Usage: sbt run [OPTIONS]
            |E.g: sbt run --exact-match --checkBalance
-           |StockExchangeEngine is simple matching engine for orders in a stock market.
+           |StockExchangeEngine is a simple matching engine for orders in a stock market.
            |Options:
            |""".stripMargin)
   footer("\nIf you have any questions, please consult Kenneth")
   val exactMatch = opt[Boolean](argName = "exact-match", required = false, default = Option(false),
-    descr = "If enabled, matching is done only when both stock price and volume match.")
+    descr = "Match only when both stock price and volume match.")
   val checkBalance = opt[Boolean](argName = "check-balance", required = false, default = Option(false),
-    descr = "If enabled, price and volume balances are checked for validity before an order is processed.")
+    descr = "Check price and volume balances for validity before processing orders.")
   verify()
 }
